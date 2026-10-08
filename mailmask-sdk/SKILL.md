@@ -5,7 +5,7 @@ license: MIT
 compatibility: Node 18+, Deno, Bun or Workers (uses fetch and WebCrypto only). Network access to https://www.mailmask.studio.
 metadata:
   author: mailmask
-  version: "1.3"
+  version: "1.4"
 ---
 
 # MailMask SDK
@@ -27,9 +27,13 @@ in Spanish, written for the end user) on any non-2xx. 60 requests per minute per
 
 All take a `domainId` (from `mm.domains.list()`) except `domains` and `apiKeys`.
 
+`mm.domains.list()` is an inventory: `mxConfigured` / `verified` are the last stored check
+(`checkedAt`), and `mxStatus` / `verifiedStatus` come back `"unknown"` when that check is older
+than 24 h. To know whether a domain's MX or verification is right, call `mm.domains.health(id)`.
+
 | Resource | Methods |
 |---|---|
-| `mm.domains` | `list()`, `get(id)`, `create(domain)` → DNS records to set, `dnsSetup(id, { live? })` → records to paste + `registrarHint`, `verify(id)`, `health(id)`, `delete(id)` |
+| `mm.domains` | `list()`, `get(id)`, `create(domain)` → DNS records to set, `dnsSetup(id, { live? })` → records to paste + `registrarHint`, `verify(id)`, `health(id)`, `delete(id)`, `uploadImage(id, blob)` → `{ url }` of an image to embed in an outgoing email (PNG/JPG/GIF/WebP, max 2 MB; ephemeral, deleted after sending) (0.4.7+) |
 | `mm.addresses` (0.4.5+; `mm.aliases` is the same object and keeps working) | `list(d)`, `create(d, { alias, destinations?, mailbox? })`, `update(d, alias, { enabled?, destinations? })`, `delete(d, alias)`, `createMailbox(d, alias)`, `deleteMailbox(d, alias)`, `resetMailboxPassword(d, alias)`, `appleProfile(d, alias)` → plist text, `exportMbox(d, alias)` → streaming `Response` |
 | `mm.send` | `send(d, input, { idempotencyKey? })`, `bulkSend(d, { from, recipients, subject, html })`, `bulkStatus(d, jobId)` |
 | `mm.attachments` | `upload(d, { filename, contentType, data })` → key to pass in `send({ attachments: [key] })` |
@@ -46,7 +50,7 @@ All take a `domainId` (from `mm.domains.list()`) except `domains` and `apiKeys`.
 | `mm.members` | `list(d)` → `{ members, invites }`, `invite(d, { email, name, role? })`, `remove(d, memberId)`, `cancelInvite(d, token)` |
 | `mm.signature` | `get(d)`, `set(d, markdown)` (max 2000, empty string clears) |
 | `mm.canned` | `list(d)`, `create(d, { title, body })`, `delete(d, cannedId)` |
-| `mm.account` | `getProfile()` → `{ email, displayName, avatarUrl }`, `updateProfile({ displayName })` (max 60, empty clears), `setAvatar(blob)` (PNG/JPG/WebP, max 2 MB), `setAvatarFromUrl(url)` (only a signed assistant upload), `removeAvatar()` |
+| `mm.account` | `me()` → identity + plan + usage per domain and total (0.4.7+), `export()` → all your data as JSON: addresses, rules and logs of every domain (0.4.7+), `getProfile()` → `{ email, displayName, avatarUrl }`, `updateProfile({ displayName })` (max 60, empty clears), `setAvatar(blob)` (PNG/JPG/WebP, max 2 MB), `setAvatarFromUrl(url)` (only a signed assistant upload), `removeAvatar()` |
 
 Payments are MercadoPago links a person opens and pays (`init_point` / `initPoint`); nothing
 changes until MercadoPago confirms, so check `billing.addons()` or `registrations.list()` after.
